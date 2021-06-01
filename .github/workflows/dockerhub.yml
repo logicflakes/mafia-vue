@@ -33,7 +33,7 @@ jobs:
           echo "RLZ_SHORT_VER=$short_ver" >> $GITHUB_ENV
       - name: Instantiate Reliza status as Rejected to handle possible build failure
         run: echo "--status rejected " > reliza_command
-      - name: Build and push docker container to Docker Hub
+      - name: Build and push docker container to Reliza Hub Registry
         continue-on-error: true
         run: |
           docker build -t $IMAGE_NAMESPACE/$IMAGE_NAME:$RLZ_SHORT_VER -t $IMAGE_NAMESPACE/$IMAGE_NAME:latest --build-arg VERSION=$RLZ_FULL_VER  \
