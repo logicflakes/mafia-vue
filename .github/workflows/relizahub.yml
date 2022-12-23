@@ -21,20 +21,16 @@ jobs:
           fetch-depth: 200
       - name: Login to Docker Registry
         run: echo ${{ secrets.DOCKER_TOKEN }} | docker login -u '${{ secrets.DOCKER_LOGIN }}' --password-stdin registry.relizahub.com
-      - name: Get Version
-        run: |
-          reliza_ver=$(reliza-cli getversion -k ${{ secrets.RELIZA_API_KEY }} -i ${{ secrets.RELIZA_API_ID }} -b $GITHUB_REF --metadata GitHub)
-          echo "completed getting ver"
-          echo $reliza_ver
-          echo "RLZ_VER_JSON=$reliza_ver" >> $GITHUB_ENV
+      - id: get-version
+        name: Get Version
+        uses: relizaio/reliza-get-version@master
+        with: 
+          reliza_api_id: ${{ secrets.RELIZA_API_ID }}
+          reliza_api_key: ${{ secrets.RELIZA_API_KEY }}
       - name: Extract Actual Version From JSON
-        if: steps.setup-reliza-cli.outcome == 'success'
         run: |
-          full_ver=$(echo $RLZ_VER_JSON | jq -r ".version")
-          # version without meta for docker registry
-          short_ver=$(echo $RLZ_VER_JSON | jq -r ".dockerTagSafeVersion")
-          echo "RLZ_FULL_VER=$full_ver" >> $GITHUB_ENV
-          echo "RLZ_SHORT_VER=$short_ver" >> $GITHUB_ENV
+          echo "RLZ_FULL_VER=${{ steps.get-version.outputs.reliza_full_version }}" >> $GITHUB_ENV
+          echo "RLZ_SHORT_VER=${{ steps.get-version.outputs.reliza_short_version }}" >> $GITHUB_ENV
       - name: Instantiate Reliza status as Rejected to handle possible build failure
         run: echo "--status rejected " > reliza_command
       - name: Build and push docker container to Reliza Hub Registry
