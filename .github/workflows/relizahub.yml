@@ -11,7 +11,7 @@ jobs:
       IMAGE_NAME: ${{ secrets.IMAGE_NAME }}
     steps:
       - name: setup-reliza-cli
-        uses: relizaio/setup-reliza-cli@0.1
+        uses: relizaio/setup-reliza-cli@0.2
       - name: Record build start
         run: echo "BUILD_START=$(date -Iseconds)" >> $GITHUB_ENV
       - name: Checkout
