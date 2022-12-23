@@ -10,7 +10,8 @@ jobs:
       IMAGE_NAMESPACE: ${{ secrets.IMAGE_NAMESPACE }}
       IMAGE_NAME: ${{ secrets.IMAGE_NAME }}
     steps:
-      - name: setup-reliza-cli
+      - id: setup-reliza-cli
+        name: setup-reliza-cli
         uses: relizaio/setup-reliza-cli@master
       - name: Record build start
         run: echo "BUILD_START=$(date -Iseconds)" >> $GITHUB_ENV
@@ -27,6 +28,7 @@ jobs:
           echo $reliza_ver
           echo "RLZ_VER_JSON=$reliza_ver" >> $GITHUB_ENV
       - name: Extract Actual Version From JSON
+        if: steps.setup-reliza-cli.outcome == 'success'
         run: |
           full_ver=$(echo $RLZ_VER_JSON | jq -r ".version")
           # version without meta for docker registry
