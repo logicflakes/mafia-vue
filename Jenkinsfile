@@ -1,54 +1,93 @@
 pipeline {
     agent {
         kubernetes {
+            defaultContainer 'alpine'
             yaml """
 apiVersion: v1
 kind: Pod
 metadata:
-  labels:
-    run: jenkins-slave
+  name: kaniko
 spec:
-  containers:
-  - name: dind
-    image: docker:19.03.12-dind
-    command:
-    - cat
-    volumeMounts:
-    - mountPath: /var/run/docker.sock
-      name: dockersock
-    tty: true
   volumes:
-  - name: dockersock
-    hostPath:
-      path: /var/run/docker.sock
+  - name: shared-data
+    emptyDir: {}
+  containers:
+  - name: kaniko
+    image: gcr.io/kaniko-project/executor:v1.7.0-debug
+    imagePullPolicy: Always
+    command:
+    - /busybox/cat
+    tty: true
+    volumeMounts:
+    - name: shared-data
+      mountPath: /shared-data
+  - name: alpine
+    image: alpine
+    imagePullPolicy: Always
+    command:
+    - /bin/cat
+    tty: true
+    volumeMounts:
+    - name: shared-data
+      mountPath: /shared-data
 """
         }
     }
-    environment { RELIZA_API = credentials('RELIZA_API') }
+    environment {
+        IMAGE_NAMESPACE="registry.test.relizahub.com/f3b39816-e827-4882-ad37-835c011134bb-public"
+        IMAGE_NAME="mafia-vue"
+        RELIZA_API=credentials('RELIZA_API')
+    }
     stages {
-        stage ('Build and Deploy') {
+        stage('Build with Kaniko') {
             steps {
-                withReliza (uri: 'https://test.relizahub.com', projectId: '2fbf10f2-5d49-44dc-a3d7-e5eb6964996a') {
-                    script {
-                        try {
-                            env.COMMIT_TIME = sh(script: 'git log -1 --date=iso-strict --pretty="%ad"', returnStdout: true).trim()
-                            container('dind') {
-                                sh '''
-                                    docker build -t relizatest/throw .
-                                    docker login -u relizatest -p password
-                                    docker push relizatest/throw
-                                    DOCKER_SHA_256=$(docker images --no-trunc --quiet relizatest/throw:latest)
-                                '''
-                                env.DOCKER_SHA_256 = sh(script: 'docker images --no-trunc --quiet relizatest/throw:latest', returnStdout: true)
-                            }
-                        } catch (Exception e) {
-                            env.STATUS = 'rejected'
-                            echo 'FAILED BUILD: ' + e.toString()
+                script {
+                    sh 'apk add git'
+                    env.COMMIT_TIME = sh(script: 'git log -1 --date=iso-strict --pretty="%ad"', returnStdout: true).trim()
+                    withReliza(projectId: '094c08d5-4581-4555-9ad9-81e93d2b47f1') {
+                        if (env.LATEST_COMMIT) {
+                            env.COMMIT_LIST = getCommitListWithLatest()
+                        } else {
+                            env.COMMIT_LIST = getCommitListNoLatest()
                         }
-                        addRelizaRelease(artId: "relizatest/throw")
+                        if (!env.LATEST_COMMIT || env.COMMIT_LIST) {
+                            try {
+                                container(name: 'kaniko', shell: '/busybox/sh') {
+                                    withCredentials([file(credentialsId: 'docker-credentials', variable: 'DOCKER_CONFIG_JSON')]) {
+                                        withEnv(['PATH+EXTRA=/busybox']) {
+                                            sh '''#!/busybox/sh
+                                                cp $DOCKER_CONFIG_JSON /kaniko/.docker/config.json
+                                                /kaniko/executor --context `pwd` --destination "$IMAGE_NAMESPACE/$IMAGE_NAME:latest" --digest-file=/shared-data/termination-log --build-arg CI_ENV=Jenkins --build-arg GIT_COMMIT=$GIT_COMMIT --build-arg GIT_BRANCH=$GIT_BRANCH --build-arg VERSION=$VERSION --cache=true
+                                            '''
+                                        }
+                                    }
+                                }
+                                env.SHA_256 = sh(script: 'cat /shared-data/termination-log', returnStdout: true).trim()
+                                echo "SHA 256 digest of our container = ${env.SHA_256}"
+                            } catch (Exception e) {
+                                env.STATUS = 'rejected'
+                                echo 'FAILED BUILD: ' + e.toString()
+                                currentBuild.result = 'FAILURE'
+                            }
+                            addRelizaRelease(artId: "$IMAGE_NAMESPACE/$IMAGE_NAME", artType: "Docker", useCommitList: 'true')
+                        } else {
+                            echo 'Repeated build, skipping push'
+                        }
                     }
                 }
             }
         }
     }
+}
+
+String getCommitListNoLatest() {
+  if (env.GIT_PREVIOUS_SUCCESSFUL_COMMIT) {
+    return sh(script: 'git log $GIT_PREVIOUS_SUCCESSFUL_COMMIT..$GIT_COMMIT --date=iso-strict --pretty="%H|||%ad|||%s" -- ./ | base64 -w 0', returnStdout: true).trim()
+  } else {
+    return sh(script: 'git log -1 --date=iso-strict --pretty="%H|||%ad|||%s" -- ./ | base64 -w 0', returnStdout: true).trim()
+  }
+}
+
+String getCommitListWithLatest() {
+  return sh(script: 'git log $LATEST_COMMIT..$GIT_COMMIT --date=iso-strict --pretty="%H|||%ad|||%s" -- ./ | base64 -w 0', returnStdout: true).trim()
 }
