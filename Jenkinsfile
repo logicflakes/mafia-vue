@@ -43,7 +43,7 @@ spec:
             steps {
                 script {
                     sh 'apk add git'
-                    sh 'git config --global --add safe.directory ./'
+                    sh 'git config --global --add safe.directory /home/jenkins/agent/workspace/mafia-vue'
                     env.COMMIT_TIME = sh(script: 'git log -1 --date=iso-strict --pretty="%ad"', returnStdout: true).trim()
                     withReliza(projectId: '094c08d5-4581-4555-9ad9-81e93d2b47f1') {
                         if (env.LATEST_COMMIT) {
