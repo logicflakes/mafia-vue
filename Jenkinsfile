@@ -37,6 +37,7 @@ spec:
         IMAGE_NAMESPACE="registry.test.relizahub.com/f3b39816-e827-4882-ad37-835c011134bb-public"
         IMAGE_NAME="mafia-vue"
         RELIZA_API=credentials('RELIZA_API')
+        container="kube"
     }
     stages {
         stage('Build with Kaniko') {
