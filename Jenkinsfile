@@ -40,6 +40,14 @@ spec:
         container="kube"
     }
     stages {
+        stage('Print push payload') {
+            steps {
+                script {
+                    sh 'echo $BITBUCKET_PAYLOAD'
+                    sh 'echo $BITBUCKET_PAYLOAD | jq .'
+                }
+            }
+        }
         stage('Build with Kaniko') {
             steps {
                 script {
