@@ -44,7 +44,7 @@ spec:
             steps {
                 script {
                     sh 'echo $BITBUCKET_PAYLOAD'
-                    sh 'echo $BITBUCKET_PAYLOAD | jq .'
+                    sh 'echo $PULLREQUEST_DATA'
                 }
             }
         }
