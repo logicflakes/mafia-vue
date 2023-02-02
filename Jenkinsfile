@@ -43,8 +43,9 @@ spec:
         stage('Print push payload') {
             steps {
                 script {
-                    sh 'echo $BITBUCKET_PAYLOAD'
-                    sh 'echo $PULLREQUEST_DATA'
+                    sh 'echo $PULLREQUEST_DATA_destination_branch_name'
+                    sh 'echo $PULLREQUEST_DATA_state'
+                    sh 'echo $PULLREQUEST_DATA_source_branch_name'
                 }
             }
         }
