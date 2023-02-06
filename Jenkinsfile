@@ -82,6 +82,7 @@ spec:
                                 currentBuild.result = 'FAILURE'
                             }
                             addRelizaRelease(artId: "$IMAGE_NAMESPACE/$IMAGE_NAME", artType: "Docker", useCommitList: 'true')
+                            submitPrData(targetBranch: "master", state: "OPEN", title: "PRTEST", number: "1", )
                         } else {
                             echo 'Repeated build, skipping push'
                         }
