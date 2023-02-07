@@ -43,7 +43,7 @@ spec:
         stage('Print push payload') {
             steps {
                 script {
-                    sh 'echo $BITBUCKET_PAYLOAD'
+                    sh 'printenv'
                 }
             }
         }
