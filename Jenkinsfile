@@ -110,8 +110,9 @@ def setPrDetailsOnEnv(){
     sh 'apk add curl'
     sh 'echo $BITBUCKET_API_URL/commit/$GIT_COMMIT/pullrequests'
     def jsonSlurper = new JsonSlurper()
-
-    def commitPr = sh(script: '$(curl --request GET --url \'$BITBUCKET_API_URL/commit/$GIT_COMMIT/pullrequests\' --header \'Accept: application/json\' --header \'Authorization: Bearer $BITBUCKET_TOKEN\')', returnStdout: true)
+    def request = '$(curl --request GET --url \'$BITBUCKET_API_URL/commit/$GIT_COMMIT/pullrequests\' --header \'Accept: application/json\' --header \'Authorization: Bearer $BITBUCKET_TOKEN\')'
+    sh 'echo $request'
+    def commitPr = sh(script: request, returnStdout: true)
     sh 'echo $commitPr'
     def commitPrJson = jsonSlurper.parseText(commitPr)
     sh 'echo $commitPrJson'
