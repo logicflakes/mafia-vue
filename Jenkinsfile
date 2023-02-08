@@ -112,6 +112,7 @@ def setPrDetailsOnEnv(){
     def jsonSlurper = new JsonSlurper()
 
     def commitPr = sh(script: '$(curl --request GET --url \'$BITBUCKET_API_URL/commit/$GIT_COMMIT/pullrequests\' --header \'Accept: application/json\' --header \'Authorization: Bearer $BITBUCKET_TOKEN\')', returnStdout: true)
+    sh 'echo $commitPr'
     def commitPrJson = jsonSlurper.parseText(commitPr)
     sh 'echo $commitPrJson'
 }
