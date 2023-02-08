@@ -83,6 +83,13 @@ spec:
                                 currentBuild.result = 'FAILURE'
                             }
                             addRelizaRelease(artId: "$IMAGE_NAMESPACE/$IMAGE_NAME", artType: "Docker", useCommitList: 'true')
+                            PR_TITLE
+PR_STATE
+PR_STATE
+PR_TARGET
+PR_CREATED
+PR_CREATED
+                            submitPrData(title: "$PR_TITLE", targetBranch: "$TARGET", state: "$PR_STATE", number: "$PRID", createdDate: "$PR_CREATED")
                         } else {
                             echo 'Repeated build, skipping push'
                         }
@@ -111,21 +118,17 @@ def setPrDetailsOnEnv(){
    
     env.commitPr = sh(script: "curl --request GET --url '$BITBUCKET_API_URL/commit/$GIT_COMMIT/pullrequests' --header 'Accept: application/json' --header 'Authorization: Bearer $BITBUCKET_TOKEN'", returnStdout: true)
     sh 'echo $commitPr'
-    def prid = sh('echo $commitPr | jq -r ".values[0].id"')
-    echo "prid is $prid"
+    sh('PRID=$(echo $commitPr | jq -r ".values[0].id")')
+    echo "prid is $PRID"
     sh '''
-    if [ "null" != "$PRID" ]
+    if [ ! -z "$PRID" ] && [ "null" != "$PRID" ]
     then
         PRDATA=$(curl --request GET --url "$BITBUCKET_API_URL/pullrequests/$PRID" --header "Accept: application/json" --header "Authorization: Bearer $BITBUCKET_TOKEN")
-        echo "PRDATA=$PRDATA"
         PR_TITLE=$(echo $PRDATA | jq -r .title)
-        echo "PRTITLE = $PR_TITLE"
         PR_STATE=$(echo $PRDATA | jq -r .state)
         PR_STATE=$(echo $PRDATA | jq -r .state)
         PR_TARGET=$(echo $PRDATA | jq -r .destination.branch.name)
         PR_CREATED=$(echo $PRDATA | jq -r .created_on)
-        PR_CREATED=$(echo $PRDATA | jq -r .created_on)
     fi
     '''
-    
 }
