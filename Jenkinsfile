@@ -38,6 +38,8 @@ spec:
         IMAGE_NAME="mafia-vue"
         RELIZA_API=credentials('RELIZA_API')
         container="kube"
+        BITBUCKET_API_URL="https://api.bitbucket.org/2.0/repositories/relizar/mafia-vue"
+        BITBUCKET_TOKEN=credentials('BITBUCKET_TOKEN')
     }
     stages {
         stage('Print push payload') {
@@ -52,6 +54,7 @@ spec:
                 script {
                     sh 'apk add git'
                     sh 'git config --global --add safe.directory \'*\''
+                    setPrDetailsOnEnv()
                     env.COMMIT_TIME = sh(script: 'git log -1 --date=iso-strict --pretty="%ad"', returnStdout: true).trim()
                     withReliza(projectId: '094c08d5-4581-4555-9ad9-81e93d2b47f1', uri: 'https://test.relizahub.com') {
                         if (env.LATEST_COMMIT) {
@@ -99,4 +102,13 @@ String getCommitListNoLatest() {
 
 String getCommitListWithLatest() {
   return sh(script: 'git log $LATEST_COMMIT..$GIT_COMMIT --date=iso-strict --pretty="%H|||%ad|||%s" -- ./ | base64 -w 0', returnStdout: true).trim()
+}
+
+def setPrDetailsOnEnv(){
+    sh 'apk add jq'
+    def pr = sh(script: '($curl --request GET --url \'$BITBUCKET_API_URL/commit/$GIT_COMMIT/pullrequests\' --header \'Accept: application/json\' --header \'Authorization: Bearer $BITBUCKET_TOKEN\') | jq -r \'.values[0].id\' ', returnStdout: true)
+    def prdata = sh(script: '$(curl --request GET --url \'$BITBUCKET_API_URL/pullrequests/$pr\')', returnStdout: true)
+    def jsonSlurper = new JsonSlurper()
+    def object = jsonSlurper.parseText(prdata)
+    sh ('echo $object.title')
 }
