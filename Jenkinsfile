@@ -108,12 +108,16 @@ String getCommitListWithLatest() {
 def setPrDetailsOnEnv(){
     sh 'apk add jq'
     sh 'apk add curl'
-    def commitPr = sh(script: "curl --request GET --url '$commitPrUrl' --header 'Accept: application/json' --header 'Authorization: Bearer $BITBUCKET_TOKEN' || :", returnStdout: true)
+   
+    def commitPr = sh(script: "curl --request GET --url '$BITBUCKET_API_URL/commit/$GIT_COMMIT/pullrequests' --header 'Accept: application/json' --header 'Authorization: Bearer $BITBUCKET_TOKEN' || :", returnStdout: true)
     
     echo commitPr
     
     def jsonSlurper = new JsonSlurper()
 
+    
+   
     def commitPrJson = jsonSlurper.parseText(commitPr)
     echo commitPrJson
+    
 }
