@@ -109,9 +109,9 @@ def setPrDetailsOnEnv(){
     sh 'apk add jq'
     sh 'apk add curl'
    
-    def commitPr = sh(script: "curl --request GET --url '$BITBUCKET_API_URL/commit/$GIT_COMMIT/pullrequests' --header 'Accept: application/json' --header 'Authorization: Bearer $BITBUCKET_TOKEN'", returnStdout: true)
+    env.commitPr = sh(script: "curl --request GET --url '$BITBUCKET_API_URL/commit/$GIT_COMMIT/pullrequests' --header 'Accept: application/json' --header 'Authorization: Bearer $BITBUCKET_TOKEN'", returnStdout: true)
 
-    def prid = sh "$(echo $commitPr | jq -r '.values[0].id')"
+    def prid = sh(script: 'echo $commitPr | jq -r ".values[0].id"', returnStdout: true)
     echo prid
     if(prid != "null"){
         def prData = sh(script: "curl --request GET --url '$BITBUCKET_API_URL/pullrequests/$prid' --header 'Accept: application/json' --header 'Authorization: Bearer $BITBUCKET_TOKEN'", returnStdout: true)
