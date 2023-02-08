@@ -113,10 +113,19 @@ def setPrDetailsOnEnv(){
     sh 'echo $commitPr'
     def prid = sh('echo $commitPr | jq -r ".values[0].id"')
     echo "prid is $prid"
-    if(prid!=null && prid!="null"){
-        echo "prid=$prid not equal null"
-        def prData = sh(script: "curl --request GET --url '$BITBUCKET_API_URL/pullrequests/$prid' --header 'Accept: application/json' --header 'Authorization: Bearer $BITBUCKET_TOKEN'", returnStdout: true)
-        echo prData
-    }
+    sh '''
+    if [ "null" != "$PRID" ]
+    then
+        PRDATA=$(curl --request GET --url "$BITBUCKET_API_URL/pullrequests/$PRID" --header "Accept: application/json" --header "Authorization: Bearer $BITBUCKET_TOKEN")
+        echo "PRDATA=$PRDATA"
+        PR_TITLE=$(echo $PRDATA | jq -r .title)
+        echo "PRTITLE = $PR_TITLE"
+        PR_STATE=$(echo $PRDATA | jq -r .state)
+        PR_STATE=$(echo $PRDATA | jq -r .state)
+        PR_TARGET=$(echo $PRDATA | jq -r .destination.branch.name)
+        PR_CREATED=$(echo $PRDATA | jq -r .created_on)
+        PR_CREATED=$(echo $PRDATA | jq -r .created_on)
+    fi
+    '''
     
 }
