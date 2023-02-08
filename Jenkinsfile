@@ -1,3 +1,4 @@
+import groovy.json.JsonSlurper
 pipeline {
     agent {
         kubernetes {
@@ -38,15 +39,14 @@ spec:
         IMAGE_NAME="mafia-vue"
         RELIZA_API=credentials('RELIZA_API')
         container="kube"
+        BITBUCKET_API_URL="https://api.bitbucket.org/2.0/repositories/relizar/mafia-vue"
+        BITBUCKET_TOKEN=credentials('BITBUCKET_TOKEN')
     }
     stages {
         stage('Print push payload') {
             steps {
                 script {
-                    sh 'echo $PULLREQUEST_DATA_destination_branch_name'
-                    sh 'echo $PULLREQUEST_DATA_state'
-                    sh 'echo $PULLREQUEST_DATA_source_branch_name'
-                    sh 'echo $BITBUCKET_PAYLOAD'
+                    sh 'printenv'
                 }
             }
         }
@@ -55,6 +55,7 @@ spec:
                 script {
                     sh 'apk add git'
                     sh 'git config --global --add safe.directory \'*\''
+                    setPrDetailsOnEnv()
                     env.COMMIT_TIME = sh(script: 'git log -1 --date=iso-strict --pretty="%ad"', returnStdout: true).trim()
                     withReliza(projectId: '094c08d5-4581-4555-9ad9-81e93d2b47f1', uri: 'https://test.relizahub.com') {
                         if (env.LATEST_COMMIT) {
@@ -82,7 +83,6 @@ spec:
                                 currentBuild.result = 'FAILURE'
                             }
                             addRelizaRelease(artId: "$IMAGE_NAMESPACE/$IMAGE_NAME", artType: "Docker", useCommitList: 'true')
-                            submitPrData(targetBranch: "master", state: "OPEN", title: "PRTEST", number: "1", )
                         } else {
                             echo 'Repeated build, skipping push'
                         }
@@ -103,4 +103,16 @@ String getCommitListNoLatest() {
 
 String getCommitListWithLatest() {
   return sh(script: 'git log $LATEST_COMMIT..$GIT_COMMIT --date=iso-strict --pretty="%H|||%ad|||%s" -- ./ | base64 -w 0', returnStdout: true).trim()
+}
+
+def setPrDetailsOnEnv(){
+    sh 'apk add jq'
+    sh 'apk add curl'
+    sh 'echo $BITBUCKET_API_URL/commit/$GIT_COMMIT/pullrequests'
+    def jsonSlurper = new JsonSlurper()
+
+    def commitPr = sh(script: '$(curl --request GET --url \'$BITBUCKET_API_URL/commit/$GIT_COMMIT/pullrequests\' --header \'Accept: application/json\' --header \'Authorization: Bearer $BITBUCKET_TOKEN\')', returnStdout: true)
+    sh 'echo $commitPr'
+    def commitPrJson = jsonSlurper.parseText(commitPr)
+    sh 'echo $commitPrJson'
 }
