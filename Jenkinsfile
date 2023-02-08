@@ -113,8 +113,8 @@ def setPrDetailsOnEnv(){
     
     echo commitPr
     
-    def jsonSlurper = new JsonSlurper()
-    def commitPrJson = jsonSlurper.parseText(commitPr)
+   
+    def commitPrJson = readJSON text: commitPr
     def prId = commitPrJson.values[0].id
     def prDetails =  sh(script: "curl --request GET --url '$BITBUCKET_API_URL/pullrequests/$prId' --header 'Accept: application/json' --header 'Authorization: Bearer $BITBUCKET_TOKEN' || :", returnStdout: true)
     echo prDetails
