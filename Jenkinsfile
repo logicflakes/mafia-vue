@@ -120,7 +120,7 @@ def setPrDetailsOnEnv(){
     echo "03 prid is $PRID"
     if [ ! -z "$PRID" ] && [ "null" != "$PRID" ]
     then
-        PRDATA=\$(curl --request GET --url '$BITBUCKET_API_URL/pullrequests/$PRID' --header 'Accept: application/json' --header 'Authorization: Bearer $BITBUCKET_TOKEN')
+        PRDATA=$(curl --request GET --url '$BITBUCKET_API_URL/pullrequests/$PRID' --header 'Accept: application/json' --header 'Authorization: Bearer $BITBUCKET_TOKEN')
         PR_TITLE=$(echo $PRDATA | jq -r .title)
         PR_STATE=$(echo $PRDATA | jq -r .state)
         PR_STATE=$(echo $PRDATA | jq -r .state)
