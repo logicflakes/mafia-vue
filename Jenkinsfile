@@ -113,14 +113,14 @@ def setPrDetailsOnEnv(){
    
     env.commitPr = sh(script: "curl --request GET --url '$BITBUCKET_API_URL/commit/$GIT_COMMIT/pullrequests' --header 'Accept: application/json' --header 'Authorization: Bearer $BITBUCKET_TOKEN'", returnStdout: true)
     sh 'echo "commit pr data is ${commitPr}"'
-    env.PRID = sh(script: 'echo ${commitPr} | jq -r ".values[0].id"', returnStdout: true)
+    env.PRID = sh(script: 'echo ${commitPr} | jq -r ".values[0].id"', returnStdout: true).trim()
     sh ("echo '01 prid is $PRID'")
     if(env.PRID != "null" && env.PRID != ""){
-        env.PRDATA = sh(script: "curl --request GET --url '$BITBUCKET_API_URL/pullrequests/$PRID' --header 'Accept: application/json' --header 'Authorization: Bearer $BITBUCKET_TOKEN'", returnStdout: true)
-        env.PR_TITLE = sh(script: 'echo ${PRDATA} | jq -r ".title"', returnStdout: true)
-        env.PR_STATE = sh(script: 'echo ${PRDATA} | jq -r ".state"', returnStdout: true)
-        env.PR_TARGET = sh(script: 'echo ${PRDATA} | jq -r ".destination.branch.name"', returnStdout: true)
-        env.PR_CREATED = sh(script: 'echo ${PRDATA} | jq -r ".created_on"', returnStdout: true)
+        env.PRDATA = sh(script: "curl --request GET --url '$BITBUCKET_API_URL/pullrequests/$PRID' --header 'Accept: application/json' --header 'Authorization: Bearer $BITBUCKET_TOKEN'", returnStdout: true).trim()
+        env.PR_TITLE = sh(script: 'echo ${PRDATA} | jq -r ".title"', returnStdout: true).trim()
+        env.PR_STATE = sh(script: 'echo ${PRDATA} | jq -r ".state"', returnStdout: true).trim()
+        env.PR_TARGET = sh(script: 'echo ${PRDATA} | jq -r ".destination.branch.name"', returnStdout: true).trim()
+        env.PR_CREATED = sh(script: 'echo ${PRDATA} | jq -r ".created_on"', returnStdout: true).trim()
     }
     
     sh ("echo '01 PRDATA is $PRDATA'")
