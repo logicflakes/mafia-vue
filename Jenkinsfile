@@ -83,8 +83,9 @@ spec:
                                 currentBuild.result = 'FAILURE'
                             }
                             addRelizaRelease(artId: "$IMAGE_NAMESPACE/$IMAGE_NAME", artType: "Docker", useCommitList: 'true')
-                           
-                            submitPrData(title: "$PR_TITLE", targetBranch: "$TARGET", state: "$PR_STATE", number: "$PRID", createdDate: "$PR_CREATED")
+                            if(env.PRID != "null" && env.PRID != ""){
+                                submitPrData(title: "$PR_TITLE", targetBranch: "$PR_TARGET", state: "$PR_STATE", number: "$PRID", createdDate: "$PR_CREATED", commit: "$GIT_COMMIT")
+                            }
                         } else {
                             echo 'Repeated build, skipping push'
                         }
