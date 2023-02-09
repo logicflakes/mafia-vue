@@ -115,7 +115,7 @@ def setPrDetailsOnEnv(){
     sh 'echo "commit pr data is ${commitPr}"'
     env.PRID = sh(script: 'echo ${commitPr} | jq -r ".values[0].id"', returnStdout: true)
     sh ("echo '01 prid is $PRID'")
-    sh """
+    sh '''
     echo '02 prid is $PRID'
     echo "03 prid is $PRID"
     if [ ! -z "$PRID" ] && [ "null" != "$PRID" ]
@@ -127,5 +127,5 @@ def setPrDetailsOnEnv(){
         PR_TARGET=$(echo $PRDATA | jq -r .destination.branch.name)
         PR_CREATED=$(echo $PRDATA | jq -r .created_on)
     fi
-    """
+    '''
 }
