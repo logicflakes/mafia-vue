@@ -83,6 +83,9 @@ spec:
                                 currentBuild.result = 'FAILURE'
                             }
                             addRelizaRelease(artId: "$IMAGE_NAMESPACE/$IMAGE_NAME", artType: "Docker", useCommitList: 'true')
+                            if(env.PRID != "null" && env.PRID != ""){
+                                submitPrData(title: "$PR_TITLE", targetBranch: "$PR_TARGET", state: "$PR_STATE", number: "$PRID", createdDate: "$PR_CREATED", commit: "$GIT_COMMIT")
+                            }
                         } else {
                             echo 'Repeated build, skipping push'
                         }
@@ -110,13 +113,21 @@ def setPrDetailsOnEnv(){
     sh 'apk add curl'
    
     env.commitPr = sh(script: "curl --request GET --url '$BITBUCKET_API_URL/commit/$GIT_COMMIT/pullrequests' --header 'Accept: application/json' --header 'Authorization: Bearer $BITBUCKET_TOKEN'", returnStdout: true)
-    sh 'echo $commitPr'
-    def prid = sh('echo $commitPr | jq -r ".values[0].id"')
-    echo prid
-    if(prid != null){
-        echo "prid=$prid not equal null"
-        def prData = sh(script: "curl --request GET --url '$BITBUCKET_API_URL/pullrequests/$prid' --header 'Accept: application/json' --header 'Authorization: Bearer $BITBUCKET_TOKEN'", returnStdout: true)
-        echo prData
+    sh 'echo "commit pr data is ${commitPr}"'
+    env.PRID = sh(script: 'echo ${commitPr} | jq -r ".values[0].id"', returnStdout: true).trim()
+    sh ("echo '01 prid is $PRID'")
+    if(env.PRID != "null" && env.PRID != ""){
+        env.PRDATA = sh(script: "curl --request GET --url '$BITBUCKET_API_URL/pullrequests/$PRID' --header 'Accept: application/json' --header 'Authorization: Bearer $BITBUCKET_TOKEN'", returnStdout: true)
+        env.PR_TITLE = sh(script: 'echo ${PRDATA} | jq -r ".title"', returnStdout: true).trim()
+        env.PR_STATE = sh(script: 'echo ${PRDATA} | jq -r ".state"', returnStdout: true).trim()
+        env.PR_TARGET = sh(script: 'echo ${PRDATA} | jq -r ".destination.branch.name"', returnStdout: true).trim()
+        env.PR_CREATED = sh(script: 'echo ${PRDATA} | jq -r ".created_on"', returnStdout: true).trim()
     }
     
+    sh ("echo '01 PRDATA is $PRDATA'")
+    sh ("echo '01 PR_TITLE is $PR_TITLE'")
+    sh ("echo '01 PR_STATE is $PR_STATE'")
+    sh ("echo '01 PR_TARGET is $PR_TARGET'")
+    sh ("echo '01 PR_CREATED is $PR_CREATED'")
+
 }
