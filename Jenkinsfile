@@ -84,7 +84,7 @@ spec:
                             }
                             addRelizaRelease(artId: "$IMAGE_NAMESPACE/$IMAGE_NAME", artType: "Docker", useCommitList: 'true')
                             if(env.PRID != "null" && env.PRID != ""){
-                                submitPrData(title: "$PR_TITLE", targetBranch: "$PR_TARGET", state: "$PR_STATE", number: "$PRID", createdDate: "$PR_CREATED", commit: "$GIT_COMMIT")
+                                submitPrData(title: "$PR_TITLE", targetBranch: "$PR_TARGET", state: "$PR_STATE", number: "$PRID", createdDate: "$PR_CREATED", commit: "$GIT_COMMIT", baseBranch: "$PR_BASE", endpoint: "$PR_HTML")
                             }
                         } else {
                             echo 'Repeated build, skipping push'
@@ -121,6 +121,8 @@ def setPrDetailsOnEnv(){
         env.PR_TITLE = sh(script: 'echo ${PRDATA} | jq -r ".title"', returnStdout: true).trim()
         env.PR_STATE = sh(script: 'echo ${PRDATA} | jq -r ".state"', returnStdout: true).trim()
         env.PR_TARGET = sh(script: 'echo ${PRDATA} | jq -r ".destination.branch.name"', returnStdout: true).trim()
+        env.PR_BASE = sh(script: 'echo ${PRDATA} | jq -r ".source.branch.name"', returnStdout: true).trim()
+        env.PR_HTML = sh(script: 'echo ${PRDATA} | jq -r ".links.html.href"', returnStdout: true).trim()
         env.PR_CREATED = sh(script: 'echo ${PRDATA} | jq -r ".created_on"', returnStdout: true).trim()
     }
     
