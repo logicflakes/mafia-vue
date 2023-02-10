@@ -113,9 +113,7 @@ def setPrDetailsOnEnv(){
     sh 'apk add curl'
    
     env.commitPr = sh(script: "curl --request GET --url '$BITBUCKET_API_URL/commit/$GIT_COMMIT/pullrequests' --header 'Accept: application/json' --header 'Authorization: Bearer $BITBUCKET_TOKEN'", returnStdout: true)
-    sh 'echo "commit pr data is ${commitPr}"'
     env.PRID = sh(script: 'echo ${commitPr} | jq -r ".values[0].id"', returnStdout: true).trim()
-    sh ("echo '01 prid is $PRID'")
     if(env.PRID != "null" && env.PRID != ""){
         env.PRDATA = sh(script: "curl --request GET --url '$BITBUCKET_API_URL/pullrequests/$PRID' --header 'Accept: application/json' --header 'Authorization: Bearer $BITBUCKET_TOKEN'", returnStdout: true)
         env.PR_TITLE = sh(script: 'echo ${PRDATA} | jq -r ".title"', returnStdout: true).trim()
@@ -125,11 +123,5 @@ def setPrDetailsOnEnv(){
         env.PR_HTML = sh(script: 'echo ${PRDATA} | jq -r ".links.html.href"', returnStdout: true).trim()
         env.PR_CREATED = sh(script: 'echo ${PRDATA} | jq -r ".created_on"', returnStdout: true).trim()
     }
-    
-    sh ("echo '01 PRDATA is $PRDATA'")
-    sh ("echo '01 PR_TITLE is $PR_TITLE'")
-    sh ("echo '01 PR_STATE is $PR_STATE'")
-    sh ("echo '01 PR_TARGET is $PR_TARGET'")
-    sh ("echo '01 PR_CREATED is $PR_CREATED'")
 
 }
