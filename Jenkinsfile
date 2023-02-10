@@ -1,3 +1,4 @@
+import groovy.json.JsonSlurper
 pipeline {
     agent {
         kubernetes {
@@ -38,12 +39,14 @@ spec:
         IMAGE_NAME="mafia-vue"
         RELIZA_API=credentials('RELIZA_API')
         container="kube"
+        BITBUCKET_API_URL="https://api.bitbucket.org/2.0/repositories/relizar/mafia-vue"
+        BITBUCKET_TOKEN=credentials('BITBUCKET_TOKEN')
     }
     stages {
         stage('Print push payload') {
             steps {
                 script {
-                    sh 'echo $BITBUCKET_PAYLOAD'
+                    sh 'printenv'
                 }
             }
         }
@@ -52,6 +55,7 @@ spec:
                 script {
                     sh 'apk add git'
                     sh 'git config --global --add safe.directory \'*\''
+                    setPrDetailsOnEnv()
                     env.COMMIT_TIME = sh(script: 'git log -1 --date=iso-strict --pretty="%ad"', returnStdout: true).trim()
                     withReliza(projectId: '094c08d5-4581-4555-9ad9-81e93d2b47f1', uri: 'https://test.relizahub.com') {
                         if (env.LATEST_COMMIT) {
@@ -79,6 +83,9 @@ spec:
                                 currentBuild.result = 'FAILURE'
                             }
                             addRelizaRelease(artId: "$IMAGE_NAMESPACE/$IMAGE_NAME", artType: "Docker", useCommitList: 'true')
+                            if(env.PRID != "null" && env.PRID != ""){
+                                submitPrData(title: "$PR_TITLE", targetBranch: "$PR_TARGET", state: "$PR_STATE", number: "$PRID", createdDate: "$PR_CREATED", commit: "$GIT_COMMIT", baseBranch: "$PR_BASE", endpoint: "$PR_HTML")
+                            }
                         } else {
                             echo 'Repeated build, skipping push'
                         }
@@ -99,4 +106,30 @@ String getCommitListNoLatest() {
 
 String getCommitListWithLatest() {
   return sh(script: 'git log $LATEST_COMMIT..$GIT_COMMIT --date=iso-strict --pretty="%H|||%ad|||%s" -- ./ | base64 -w 0', returnStdout: true).trim()
+}
+
+def setPrDetailsOnEnv(){
+    sh 'apk add jq'
+    sh 'apk add curl'
+   
+    env.commitPr = sh(script: "curl --request GET --url '$BITBUCKET_API_URL/commit/$GIT_COMMIT/pullrequests' --header 'Accept: application/json' --header 'Authorization: Bearer $BITBUCKET_TOKEN'", returnStdout: true)
+    sh 'echo "commit pr data is ${commitPr}"'
+    env.PRID = sh(script: 'echo ${commitPr} | jq -r ".values[0].id"', returnStdout: true).trim()
+    sh ("echo '01 prid is $PRID'")
+    if(env.PRID != "null" && env.PRID != ""){
+        env.PRDATA = sh(script: "curl --request GET --url '$BITBUCKET_API_URL/pullrequests/$PRID' --header 'Accept: application/json' --header 'Authorization: Bearer $BITBUCKET_TOKEN'", returnStdout: true)
+        env.PR_TITLE = sh(script: 'echo ${PRDATA} | jq -r ".title"', returnStdout: true).trim()
+        env.PR_STATE = sh(script: 'echo ${PRDATA} | jq -r ".state"', returnStdout: true).trim()
+        env.PR_TARGET = sh(script: 'echo ${PRDATA} | jq -r ".destination.branch.name"', returnStdout: true).trim()
+        env.PR_BASE = sh(script: 'echo ${PRDATA} | jq -r ".source.branch.name"', returnStdout: true).trim()
+        env.PR_HTML = sh(script: 'echo ${PRDATA} | jq -r ".links.html.href"', returnStdout: true).trim()
+        env.PR_CREATED = sh(script: 'echo ${PRDATA} | jq -r ".created_on"', returnStdout: true).trim()
+    }
+    
+    sh ("echo '01 PRDATA is $PRDATA'")
+    sh ("echo '01 PR_TITLE is $PR_TITLE'")
+    sh ("echo '01 PR_STATE is $PR_STATE'")
+    sh ("echo '01 PR_TARGET is $PR_TARGET'")
+    sh ("echo '01 PR_CREATED is $PR_CREATED'")
+
 }
