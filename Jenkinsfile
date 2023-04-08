@@ -83,7 +83,7 @@ spec:
                             }
                             addRelizaRelease(artId: "$IMAGE_NAMESPACE/$IMAGE_NAME", artType: "Docker", useCommitList: 'true')
                             if(env.PRID != "null" && env.PRID != ""){
-                                submitPrData(title: "$PR_TITLE", targetBranch: "$PR_TARGET", state: "$PR_STATE", number: "$PRID", createdDate: "$PR_CREATED", commit: "$GIT_COMMIT", commits: "$COMMIT_LIST" baseBranch: "$PR_BASE", endpoint: "$PR_HTML")
+                                submitPrData(title: "$PR_TITLE", targetBranch: "$PR_TARGET", state: "$PR_STATE", number: "$PRID", createdDate: "$PR_CREATED", commit: "$GIT_COMMIT", commits: "$COMMIT_LIST", baseBranch: "$PR_BASE", endpoint: "$PR_HTML")
                             }
                         } else {
                             echo 'Repeated build, skipping push'
