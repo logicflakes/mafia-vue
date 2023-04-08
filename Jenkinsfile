@@ -83,7 +83,7 @@ spec:
                             }
                             addRelizaRelease(artId: "$IMAGE_NAMESPACE/$IMAGE_NAME", artType: "Docker", useCommitList: 'true')
                             if(env.PRID != "null" && env.PRID != ""){
-                                submitPrData(title: "$PR_TITLE", targetBranch: "$PR_TARGET", state: "$PR_STATE", number: "$PRID", createdDate: "$PR_CREATED", commit: "$GIT_COMMIT", baseBranch: "$PR_BASE", endpoint: "$PR_HTML")
+                                submitPrData(title: "$PR_TITLE", targetBranch: "$PR_TARGET", state: "$PR_STATE", number: "$PRID", createdDate: "$PR_CREATED", commit: "$GIT_COMMIT", commits: "$COMMIT_LIST" baseBranch: "$PR_BASE", endpoint: "$PR_HTML")
                             }
                         } else {
                             echo 'Repeated build, skipping push'
@@ -97,14 +97,14 @@ spec:
 
 String getCommitListNoLatest() {
   if (env.GIT_PREVIOUS_SUCCESSFUL_COMMIT) {
-    return sh(script: 'git log $GIT_PREVIOUS_SUCCESSFUL_COMMIT..$GIT_COMMIT --date=iso-strict --pretty="%H|||%ad|||%s" -- ./ | base64 -w 0', returnStdout: true).trim()
+    return sh(script: 'git log $GIT_PREVIOUS_SUCCESSFUL_COMMIT..$GIT_COMMIT --date=iso-strict --pretty="%H|||%ad|||%s|||%an|||%ae" -- ./ | base64 -w 0', returnStdout: true).trim()
   } else {
-    return sh(script: 'git log -1 --date=iso-strict --pretty="%H|||%ad|||%s" -- ./ | base64 -w 0', returnStdout: true).trim()
+    return sh(script: 'git log -1 --date=iso-strict --pretty="%H|||%ad|||%s|||%an|||%ae" -- ./ | base64 -w 0', returnStdout: true).trim()
   }
 }
 
 String getCommitListWithLatest() {
-  return sh(script: 'git log $LATEST_COMMIT..$GIT_COMMIT --date=iso-strict --pretty="%H|||%ad|||%s" -- ./ | base64 -w 0', returnStdout: true).trim()
+  return sh(script: 'git log $LATEST_COMMIT..$GIT_COMMIT --date=iso-strict --pretty="%H|||%ad|||%s|||%an|||%ae" -- ./ | base64 -w 0', returnStdout: true).trim()
 }
 
 def setPrDetailsOnEnv(){
